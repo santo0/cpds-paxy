@@ -48,7 +48,9 @@ acceptor(Name, Promised, Voted, Value, PanelId) ->
             case order:goe(Round, Promised) of
                 true ->
                     %% !!!! He cambiado Proposal por Round. Lo que se tiene que devolver es un identificador, no un color
-                    Proposer ! {vote, Round},
+                    %% Proposer ! {vote, Round},
+                    T = rand:uniform(?delay),
+                    timer:send_after(T, Proposer, {vote, Round}),
                     %% M-C: Estoy de acuerdo
                     %% Context: Es el number que me han dado mayor o igual que el que he votado?
                     case order:goe(Round, Voted) of
