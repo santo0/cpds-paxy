@@ -8,4 +8,4 @@
 + 2.4
 + 2.5
 + 3.6
-+ 4.7 (sorry messages) 
++ 4.7 (sorry (not sorry) messages) 
