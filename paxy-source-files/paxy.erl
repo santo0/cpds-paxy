@@ -4,13 +4,32 @@
 -define(RED, {255, 0, 0}).
 -define(GREEN, {0, 255, 0}).
 -define(BLUE, {0, 0, 255}).
+-define(PINK, {255, 0, 255}).
+-define(ORANGE, {255, 165, 0}).
+-define(PURPLE, {128, 0, 128}).
+-define(BROWN, {165, 42, 42}).
+-define(YELLOW, {255, 255, 0}).
+-define(GRAY, {128, 128, 128}).
+-define(CYAN, {0, 255, 255}).
 
 % Sleep is a list with the initial sleep time for each proposer
 start(Sleep) ->
     AcceptorNames = ["Homer", "Marge", "Bart", "Lisa", "Maggie"],
     AccRegister = [homer, marge, bart, lisa, maggie],
-    ProposerNames = [{"Fry", ?RED}, {"Bender", ?GREEN}, {"Leela", ?BLUE}],
-    PropInfo = [{fry, ?RED}, {bender, ?GREEN}, {leela, ?BLUE}],
+    %ProposerNames = [{"Fry", ?RED}, {"Bender", ?GREEN}, {"Leela", ?BLUE}, {"Kyle", ?PINK}],
+    %PropInfo = [{fry, ?RED}, {bender, ?GREEN}, {leela, ?BLUE}, {kyle, ?PINK}],
+    ProposerNames = [
+        {"Fry", ?RED}, {"Bender", ?GREEN}, {"Leela", ?BLUE}, {"Kyle", ?PINK},
+        {"Amy", ?ORANGE}, {"Zoidberg", ?PURPLE}, {"Hermes", ?BROWN}, {"Nibbler", ?YELLOW},
+        {"Scruffy", ?GRAY}, {"ProfessorFarnsworth", ?CYAN}
+        ],
+
+    PropInfo = [
+        {fry, ?RED}, {bender, ?GREEN}, {leela, ?BLUE}, {kyle, ?PINK},
+        {amy, ?ORANGE}, {zoidberg, ?PURPLE}, {hermes, ?BROWN}, {nibbler, ?YELLOW},
+        {scruffy, ?GRAY}, {professorFarnsworth, ?CYAN}
+        ],
+
     register(gui, spawn(fun() -> gui:start(AcceptorNames, ProposerNames) end)),
     gui ! {reqState, self()},
     receive
