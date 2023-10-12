@@ -3,6 +3,8 @@
 
 -define(delay, 500).
 
+-define(drop, 1).
+
 start(Name, PanelId) ->
     spawn(fun() -> init(Name, PanelId) end).
 
@@ -21,8 +23,15 @@ acceptor(Name, Promised, Voted, Value, PanelId) ->
                     %% promise this value because the message ID (Round) is greater
                     %% than the last promise made
                     %% Proposer ! {promise, Round, Voted, Value},
-                    T = rand:uniform(?delay),
-                    timer:send_after(T, Proposer, {promise, Round, Voted, Value}),
+                    P = rand:uniform(10),
+                    if
+                        P =< ?drop ->
+                            io:format("[Acceptor ~w] promise message dropped~n", [Name]);
+                        true ->
+                            T = rand:uniform(?delay),
+                            timer:send_after(T, Proposer, {promise, Round, Voted, Value})
+                    end,
+
                     io:format(
                         "[Acceptor ~w] Phase 1: promised ~w voted ~w colour ~w~n",
                         [Name, Round, Voted, Value]
@@ -49,8 +58,15 @@ acceptor(Name, Promised, Voted, Value, PanelId) ->
                 true ->
                     %% !!!! He cambiado Proposal por Round. Lo que se tiene que devolver es un identificador, no un color
                     %% Proposer ! {vote, Round},
-                    T = rand:uniform(?delay),
-                    timer:send_after(T, Proposer, {vote, Round}),
+                    P = rand:uniform(10),
+                    if
+                        P =< ?drop ->
+                            io:format("[Acceptor ~w] vote message dropped~n", [Name]);
+                        true ->
+                            T = rand:uniform(?delay),
+                            timer:send_after(T, Proposer, {vote, Round})
+                    end,
+
                     %% M-C: Estoy de acuerdo
                     %% Context: Es el number que me han dado mayor o igual que el que he votado?
                     case order:goe(Round, Voted) of
