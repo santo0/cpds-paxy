@@ -14,21 +14,26 @@
 
 % Sleep is a list with the initial sleep time for each proposer
 start(Sleep) ->
-    AcceptorNames = ["Homer", "Marge", "Bart", "Lisa", "Maggie"],
-    AccRegister = [homer, marge, bart, lisa, maggie],
-    %ProposerNames = [{"Fry", ?RED}, {"Bender", ?GREEN}, {"Leela", ?BLUE}, {"Kyle", ?PINK}],
-    %PropInfo = [{fry, ?RED}, {bender, ?GREEN}, {leela, ?BLUE}, {kyle, ?PINK}],
-    ProposerNames = [
-        {"Fry", ?RED}, {"Bender", ?GREEN}, {"Leela", ?BLUE}, {"Kyle", ?PINK},
-        {"Amy", ?ORANGE}, {"Zoidberg", ?PURPLE}, {"Hermes", ?BROWN}, {"Nibbler", ?YELLOW},
-        {"Scruffy", ?GRAY}, {"ProfessorFarnsworth", ?CYAN}
-        ],
+    % AcceptorNames = ["Homer", "Marge", "Bart", "Lisa", "Maggie"],
+    % AccRegister = [homer, marge, bart, lisa, maggie],
+    AcceptorNames = ["Homer", "Marge", "Bart", "Lisa", "Maggie", "Apu", "Ned", "Lenny", "Carl", "Milhouse",
+        "Krusty", "SideshowBob", "Moe", "Barney", "MrBurns", "Smithers", "Ralph", "Nelson", "Patty", "Selma"],
+    AccRegister = [homer, marge, bart, lisa, maggie, apu, ned, lenny, carl, milhouse,
+        krusty, sideshowbob, moe, barney, mrburns, smithers, ralph, nelson, patty, selma],
 
-    PropInfo = [
-        {fry, ?RED}, {bender, ?GREEN}, {leela, ?BLUE}, {kyle, ?PINK},
-        {amy, ?ORANGE}, {zoidberg, ?PURPLE}, {hermes, ?BROWN}, {nibbler, ?YELLOW},
-        {scruffy, ?GRAY}, {professorFarnsworth, ?CYAN}
-        ],
+    ProposerNames = [{"Fry", ?RED}, {"Bender", ?GREEN}, {"Leela", ?BLUE}, {"Kyle", ?PINK}],
+    PropInfo = [{fry, ?RED}, {bender, ?GREEN}, {leela, ?BLUE}, {kyle, ?PINK}],
+    %ProposerNames = [
+    %    {"Fry", ?RED}, {"Bender", ?GREEN}, {"Leela", ?BLUE}, {"Kyle", ?PINK},
+    %    {"Amy", ?ORANGE}, {"Zoidberg", ?PURPLE}, {"Hermes", ?BROWN}, {"Nibbler", ?YELLOW},
+    %    {"Scruffy", ?GRAY}, {"ProfessorFarnsworth", ?CYAN}
+    %    ],
+%
+    %PropInfo = [
+    %    {fry, ?RED}, {bender, ?GREEN}, {leela, ?BLUE}, {kyle, ?PINK},
+    %    {amy, ?ORANGE}, {zoidberg, ?PURPLE}, {hermes, ?BROWN}, {nibbler, ?YELLOW},
+    %    {scruffy, ?GRAY}, {professorFarnsworth, ?CYAN}
+    %    ],
 
     register(gui, spawn(fun() -> gui:start(AcceptorNames, ProposerNames) end)),
     gui ! {reqState, self()},
