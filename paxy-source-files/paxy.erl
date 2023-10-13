@@ -1,12 +1,12 @@
 -module(paxy).
--export([start/1, stop/0, stop/1]).
+-export([start/4, stop/0, stop/1]).
 
 -define(RED, {255, 0, 0}).
 -define(GREEN, {0, 255, 0}).
 -define(BLUE, {0, 0, 255}).
 
 % Sleep is a list with the initial sleep time for each proposer
-start(Sleep) ->
+start(Sleep, Main_ref, Acc_ref, Pro_ref) ->
     AcceptorNames = ["Homer", "Marge", "Bart", "Lisa", "Maggie"],
     AccRegister = [homer, marge, bart, lisa, maggie],
     ProposerNames = [{"Fry", ?RED}, {"Bender", ?GREEN}, {"Leela", ?BLUE}],
@@ -16,10 +16,13 @@ start(Sleep) ->
     receive
         {reqState, State} ->
             {AccIds, PropIds} = State,
-            start_acceptors(AccIds, AccRegister),
+            Main = self(),
+            spawn(Acc_ref, fun() -> start_acceptors(AccIds, AccRegister, Main) end),
+            receive finished_starting_acceptors -> io:format("All acceptors started~n", []) end,
             spawn(fun() ->
                 Begin = erlang:monotonic_time(),
-                start_proposers(PropIds, PropInfo, AccRegister, Sleep, self()),
+                RemoteAcceptors = lists:map(fun(X) -> {X, Acc_ref} end, AccRegister),
+                spawn(Pro_ref, fun() -> start_proposers(PropIds, PropInfo, RemoteAcceptors, Sleep, Main) end),
                 wait_proposers(length(PropIds)),
                 End = erlang:monotonic_time(),
                 Elapsed = erlang:convert_time_unit(End - Begin, native, millisecond),
@@ -27,15 +30,16 @@ start(Sleep) ->
             end)
     end.
 
-start_acceptors(AccIds, AccReg) ->
+start_acceptors(AccIds, AccReg, Main) ->
     case AccIds of
         [] ->
             ok;
         [AccId | Rest] ->
             [RegName | RegNameRest] = AccReg,
             register(RegName, acceptor:start(RegName, AccId)),
-            start_acceptors(Rest, RegNameRest)
-    end.
+            start_acceptors(Rest, RegNameRest, Main)
+    end,
+    Main ! finished_starting_acceptors.
 
 start_proposers(PropIds, PropInfo, Acceptors, Sleep, Main) ->
     case PropIds of
