@@ -9,5 +9,4 @@ not_sourced() {
 
 
 numlist="$(python gen10rand.py)"
-erl -pa ebin -eval "paxy:start($numlist)"
-
+erl -eval "paxy:start($numlist)"

@@ -1,7 +1,7 @@
 -module(proposer).
 -export([start/6]).
 
--define(timeout, 2000).
+-define(timeout, 200).
 -define(backoff, 10).
 
 start(Name, Proposal, Acceptors, Sleep, PanelId, Main) ->
@@ -153,4 +153,13 @@ accept(Round, Proposal, Acceptors) ->
     lists:foreach(Fun, Acceptors).
 
 send(Name, Message) ->
-    Name ! Message.
+    if is_tuple(Name) -> %remote
+        Name ! Message;
+    true -> %local
+        case whereis(Name) of
+            undefined ->
+                down;
+            Pid ->
+                Pid ! Message
+        end
+    end.

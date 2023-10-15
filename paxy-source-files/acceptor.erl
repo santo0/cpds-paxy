@@ -4,13 +4,35 @@
 start(Name, PanelId) ->
     spawn(fun() -> init(Name, PanelId) end).
 
-init(Name, PanelId) ->
-    Promised = order:null(),
-    Voted = order:null(),
-    Value = na,
-    acceptor(Name, Promised, Voted, Value, PanelId).
+init(Name, PanelIdOrNa) ->
+    pers:open(Name),
+    case PanelIdOrNa of
+        na -> {Promised, Voted, Value, ValidPanelId} = pers:read(Name),
+            io:format(
+                "LOADING [Acceptor ~w] READED FROM PERS: promised ~w voted ~w colour ~w~n",
+                [Name, Promised, Voted, Value]
+            );
+
+        ValidPanelId -> 
+            io:format(
+            "NOT LOADING [Acceptor ~w] Starting new acceptor - NOT FROM PERS~n",
+                [Name]
+            ),
+            Promised = order:null(),
+            Voted = order:null(),
+            Value = na
+    end,
+    
+    acceptor(Name, Promised, Voted, Value, ValidPanelId),
+    io:format(
+        "[Acceptor ~w] FINISHED~n",
+        [Name]
+    ),
+    pers:close(Name),
+    pers:delete(Name).
 
 acceptor(Name, Promised, Voted, Value, PanelId) ->
+    pers:store(Name, Promised, Voted, Value, PanelId),
     receive
         {prepare, Proposer, Round} ->
             case order:gr(Round, Promised) of
