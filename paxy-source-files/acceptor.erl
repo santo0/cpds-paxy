@@ -64,7 +64,7 @@ acceptor(Name, Promised, Voted, Value, PanelId) ->
                             acceptor(Name, Promised, Voted, Value, PanelId)
                     end;
                 false ->
-                    %% Context: Siempre en caso de tener numero menor que prometido, devolver sorry
+                    %% Context: In case of Round smaller than Promised, return sorry
                     Proposer ! {sorry, {accept, Promised}},
                     acceptor(Name, Promised, Voted, Value, PanelId)
             end;
