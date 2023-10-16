@@ -46,7 +46,7 @@ ballot(Name, Round, Proposal, Acceptors, PanelId) ->
     %% collect recopila promesas que los acceptors envían en la phase 1b.
 
     %% He cambiado length(Acceptors) por Quorum. Este parámetro es el número de promesas que necesitamos para aprender un valor, necesitamos la mayoría Quorum, no todos los Acceptors unánimemente.
-    case collect(Quorum, Round, MaxVoted, Proposal) of
+    case collect(Quorum, Round, MaxVoted, Proposal, Quorum) of
         {accepted, Value} ->
             io:format(
                 "[Proposer ~w] Phase 2: round ~w proposal ~w (was ~w)~n",
@@ -59,7 +59,7 @@ ballot(Name, Round, Proposal, Acceptors, PanelId) ->
             %% MC: Le metemos Value, ya que los proposers no tienen que ser "egoistas"
 
             %% He cambiado también length(Acceptors) por Quorum. Igual que arriba, necesitamos solo los votos de la mayoría, no de todos
-            case vote(Quorum, Round) of
+            case vote(Quorum, Round, Quorum) of
                 ok ->
                     {ok, Value};
                 abort ->
@@ -69,14 +69,16 @@ ballot(Name, Round, Proposal, Acceptors, PanelId) ->
             abort
     end.
 
-collect(0, _, _, Proposal) ->
+collect(0, _, _, Proposal, _) ->
     {accepted, Proposal};
-collect(N, Round, MaxVoted, Proposal) ->
+collect(_, _, _, _, 0) ->
+    abort;
+collect(N, Round, MaxVoted, Proposal, SorryLimit) ->
     receive
         {promise, Round, _, na} ->
             %% Me llega promise con Value=na, eso quiere decir que el MaxVoted sera nuestro Round, ya que es el primero en hacer la request
             %% Poner MaxVoted para que el Round no sobre-escriba un MaxVoted que posiblemente sea mayor
-            collect(N - 1, Round, MaxVoted, Proposal);
+            collect(N - 1, Round, MaxVoted, Proposal, SorryLimit);
         {promise, Round, Voted, Value} ->
             %% Por que comparar Round con MaxVoted? La info nueva viene de Voted y Value. Es el voted de la response mayor que nuestro MaxVoted? Si es que si, quedarnos con lo que nos ha dicho la respuesta del Acceptor, su Voted es nuestro nuevo MaxVoted (y value el nuevo proposal)
 
@@ -87,17 +89,17 @@ collect(N, Round, MaxVoted, Proposal) ->
                     %% Yep: The proposer then collects all promises and
                     %% also the voted value with the highest sequence number so far (collect())
                     %% Nuevo MaxVoted = Round y Proposal = Value. Round se queda igual????
-                    collect(N - 1, Round, Voted, Value);
+                    collect(N - 1, Round, Voted, Value, SorryLimit);
                 false ->
                     %% Me han prometido mi ronda, no?
                     %% ...
-                    collect(N - 1, Round, MaxVoted, Proposal)
+                    collect(N - 1, Round, MaxVoted, Proposal, SorryLimit)
             end;
         {promise, _, _, _} ->
             %% M-Comment: N-1. ya que hemos recibido promesa
             %% m-C: Este caso es imposible, ya que si acceptor devuelve promise, Round siempre sera nuestro Round (patern matching), y Voted/Value
             %% se les asignara el valor que nos da el acceptor, por lo tanto se queda en el segundo brack de promise, nunca llega al tercero (es esto cierto?)
-            collect(N, Round, MaxVoted, Proposal);
+            collect(N, Round, MaxVoted, Proposal, SorryLimit);
         {sorry, {prepare, Round}} ->
             %% Sorry de Phase 1b. Acceptor ha prometido un Round
             %% mayor. Mantener estado (no se decrementa N porque
@@ -108,34 +110,37 @@ collect(N, Round, MaxVoted, Proposal) ->
             io:format("[Proposer ] Phase 1: sorry prepare round ~w proposal ~w ~n", [
                 Round, Proposal
             ]),
-            collect(N, Round, MaxVoted, Proposal);
+            collect(N, Round, MaxVoted, Proposal, SorryLimit - 1);
         {sorry, _} ->
             io:format("[Proposer ] Phase 1: sorry prepare round ~w proposal ~w ~n", [
                 Round, Proposal
             ]),
-            collect(N, Round, MaxVoted, Proposal)
+            collect(N, Round, MaxVoted, Proposal, SorryLimit)
     after ?timeout ->
         %% O han contestado todos o hay alguno que nunca devuelve respuesta, en este caso abortar y declarar como ronda fallida
         abort
     end.
 
-vote(0, _) ->
+vote(0, _, _) ->
     ok;
-vote(N, Round) ->
+vote(_, _, 0) ->
+    abort;
+vote(N, Round, SorryLimit) ->
     receive
         %% Este Pattern solo es válido cuando el mensaje que recibe tiene un Round que coincide con el de la llamada. Es decir, estamos recibiendo un voto a nuestro identificador de propuesta, así que decrementar la N y mantener el Round.
         {vote, Round} ->
             %%MC: Agree
-            vote(N - 1, Round);
+            vote(N - 1, Round, SorryLimit);
         %% Entonces aquí solo entra cuando recibimos un voto a una propuesta con ID mayor (porque si estoy aquí, me han hecho la promesa de no votar menores IDs, ¿no?)
         {vote, _} ->
             %% MC: El tema es que acceptor (tal como lo tenemos hecho) siempre devovlera nuestro Round, creo que este pattern matching es por posibles bugs, pero no tendria que llegar aqui nunca
-            vote(N, Round);
+            vote(N, Round, SorryLimit);
         {sorry, {accept, Round}} ->
             %% Aquí recibe los sorrys tras hacer accept (Phase 2b). No cuentan para la mayoría (no decrementar N), y el Round se mantiene igualmente.
-            vote(N, Round);
+            vote(N, Round, SorryLimit - 1);
         {sorry, _} ->
-            vote(N, Round)
+            % Invalid sorry received, don't count it
+            vote(N, Round, SorryLimit)
     after ?timeout ->
         abort
     end.
