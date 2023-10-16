@@ -20,6 +20,7 @@ crash(Name) ->
 
 
 start(N, AccRegs) when N>0 ->
+    io:fwrite("[acceptorAssassin] INITIALIZING ~n"),
     receive
         stop ->
             ok
