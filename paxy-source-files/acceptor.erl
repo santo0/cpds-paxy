@@ -34,7 +34,7 @@ acceptor(Name, Promised, Voted, Value, PanelId) ->
                         end,
                     PanelId !
                         {updateAcc, "Voted: " ++ io_lib:format("~p", [Voted]),
-                            "Promised: " ++ io_lib:format("~p", [Promised]), Colour},
+                            "Promised: " ++ io_lib:format("~p", [Round]), Colour},
                     acceptor(Name, Round, Voted, Value, PanelId);
                 false ->
                     % Proposer ! {sorry, {prepare, Round}},
