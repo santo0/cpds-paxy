@@ -9,4 +9,5 @@ not_sourced() {
 
 
 numlist="$(python gen10rand.py)"
+zenity --info --title="PAXY EXECUTION" --text="USING DELAYS LIST: $numlist" &
 erl -eval "paxy:start($numlist)"

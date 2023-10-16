@@ -14,7 +14,7 @@ crash(Name) ->
             pers:close(Name),
             unregister(Name),
             exit(Pid, "crash"),
-            timer:sleep(1000),
+            timer:sleep(600),
             register(Name, acceptor:start(Name, na))
     end.
 
