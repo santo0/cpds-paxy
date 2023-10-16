@@ -12,7 +12,6 @@
 -define(GRAY, {128, 128, 128}).
 -define(CYAN, {0, 255, 255}).
 
--define(crashtimeout, 200).
 
 % Sleep is a list with the initial sleep time for each proposer
 start(Sleep) ->
@@ -36,6 +35,7 @@ start(Sleep) ->
         ],
 
     register(gui, spawn(fun() -> gui:start(AcceptorNames, ProposerNames) end)),
+    AssassinPId = spawn(acceptorAssassin, start, [15, AccRegister]),
     gui ! {reqState, self()},
     receive
         {reqState, State} ->
@@ -45,6 +45,7 @@ start(Sleep) ->
                 Begin = erlang:monotonic_time(),
                 start_proposers(PropIds, PropInfo, AccRegister, Sleep, self()),
                 wait_proposers(length(PropIds)),
+                AssassinPId ! stop,
                 stopAcceptors(AccRegister),
                 End = erlang:monotonic_time(),
                 Elapsed = erlang:convert_time_unit(End - Begin, native, millisecond),
@@ -76,17 +77,10 @@ start_proposers(PropIds, PropInfo, Acceptors, Sleep, Main) ->
 wait_proposers(0) ->
     ok;
 wait_proposers(N) ->
-    if
-        N == length([1,2,3,4,5,6,7,8]) ->
-            io:fwrite("CRASHING homer"),
-            crash(homer);
-        true ->
-            io:fwrite("NOT CRASHING homer")
-    end,
     receive
         done ->
             wait_proposers(N - 1)
-    end.
+    end.  
 
 stop() ->
     stop(homer),
@@ -113,18 +107,3 @@ stopAcceptors([]) -> ok;
 stopAcceptors([Name | RemainingNames]) ->
     stop(Name),
     stopAcceptors(RemainingNames).
-
-crash(Name) ->
-    case whereis(Name) of
-        undefined ->
-            ok;
-        Pid ->
-            pers:open(Name),
-            {_, _, _, Pn} = pers:read(Name),
-            Pn ! {updateAcc, "Voted: CRASHED", "Promised: CRASHED", {0,0,0}},
-            pers:close(Name),
-            unregister(Name),
-            exit(Pid, "crash"),
-            timer:sleep(500),
-            register(Name, acceptor:start(Name, na))
-    end.

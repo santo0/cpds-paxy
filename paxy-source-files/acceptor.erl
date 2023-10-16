@@ -11,7 +11,15 @@ init(Name, PanelIdOrNa) ->
             io:format(
                 "LOADING [Acceptor ~w] READED FROM PERS: promised ~w voted ~w colour ~w~n",
                 [Name, Promised, Voted, Value]
-            );
+            ),
+            Colour =
+                case Value of
+                    na -> {0, 0, 0};
+                    _ -> Value
+                end,
+            ValidPanelId !
+                {updateAcc, "Voted: " ++ io_lib:format("~p", [Voted]),
+                    "Promised: " ++ io_lib:format("~p", [Promised]), Colour};
 
         ValidPanelId -> 
             io:format(
@@ -56,7 +64,7 @@ acceptor(Name, Promised, Voted, Value, PanelId) ->
                         end,
                     PanelId !
                         {updateAcc, "Voted: " ++ io_lib:format("~p", [Voted]),
-                            "Promised: " ++ io_lib:format("~p", [Promised]), Colour},
+                            "Promised: " ++ io_lib:format("~p", [Round]), Colour},
                     acceptor(Name, Round, Voted, Value, PanelId);
                 false ->
                     % Proposer ! {sorry, {prepare, Round}},
