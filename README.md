@@ -1,6 +1,10 @@
 # cpds-paxy
 
 
+# TODO
++ Implement feedback (Acceptor: '{sorry, {accept, Promised}}' must be '{sorry, {accept, Round}}') in all branches
++ Task 2.5: Adapt stop() function to work remotely
+
 # Tasks
 + 2.1 
 + 2.2
